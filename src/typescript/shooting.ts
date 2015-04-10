@@ -76,10 +76,10 @@ function movePlayer() {
     var left = 37;
     var right = 39;
     var SPEED = 2;
-    if (keyStates[left]) {
+    if (keyStates[left] && playerPos.x > 0) {
         moveX(-SPEED);
     }
-    if (keyStates[right]) {
+    if (keyStates[right] && (playerPos.x + img_player.width < canvas.width)) {
         moveX(SPEED);
     }
 }
