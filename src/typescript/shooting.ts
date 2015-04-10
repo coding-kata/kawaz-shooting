@@ -1,13 +1,93 @@
 "use strict";
 var canvas:HTMLCanvasElement;
 var ctx:CanvasRenderingContext2D;
-canvas = <HTMLCanvasElement>document.getElementById("screen");
-ctx = canvas.getContext("2d");
-var img_player = document.getElementById("player");
-var img_enemy = <HTMLImageElement>document.getElementById("enemy");
-// player
-ctx.drawImage(img_player, 20, 50);
-// 的
-ctx.drawImage(img_enemy,
-    Math.random() * (canvas.width - img_enemy.width),
-    Math.random() * (canvas.height - img_enemy.height));
+interface IPosition {
+    x:number;
+    y:number;
+}
+
+// プレイヤーの位置
+var playerPos:IPosition = {
+    x: 0,
+    y: 0
+};
+
+// 敵キャラの定義
+var ENEMIES_COUNT = 10;
+var enemies:IPosition[] = [];
+var img_player:HTMLImageElement;
+var img_enemy:HTMLImageElement;
+
+// メインループ - 60 FPS のゲームの場合約 17 ms
+var FPS = 30;
+var MSPF = 1000 / FPS;
+function mainLoop() {
+    var startTime = (new Date()).getTime();
+    onDraw();
+    // 処理の経過時間
+    var deltaTime:number = (new Date()).getTime() - startTime;
+    // 次のループまでのintervalを算出
+    var interval = MSPF - deltaTime;
+    if (interval > 0) {
+        // interval分を待つ
+        setTimeout(mainLoop, interval);
+    } else {
+        // 次の処理へ
+        mainLoop();
+    }
+}
+
+function initialize() {
+    img_player = <HTMLImageElement>document.getElementById("player");
+    img_enemy = <HTMLImageElement>document.getElementById("enemy");
+    canvas = <HTMLCanvasElement>document.getElementById("screen");
+    ctx = canvas.getContext("2d");
+    playerPos.x = (canvas.width - img_player.width) / 2;
+    playerPos.y = (canvas.height - img_player.height) - 20;
+    // 敵の初期位置
+    for (var i = 0; i < ENEMIES_COUNT; i++) {
+        enemies[i] = {
+            x: Math.random() * (canvas.width - img_enemy.width),
+            y: Math.random() * (canvas.height - img_enemy.height)
+        }
+    }
+    mainLoop();
+}
+function onDraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img_player, playerPos.x, playerPos.y);
+    for (var i = 0; i < ENEMIES_COUNT; i++) {
+        var enemyPosition = enemies[i];
+        ctx.drawImage(img_enemy, enemyPosition.x, enemyPosition.y);
+    }
+}
+function keyHandle(event:KeyboardEvent) {
+    function moveX(px:number) {
+        playerPos.x += px;
+    }
+
+    var left = 37;
+    var right = 39;
+    var SPEED = 2;
+    var moved = false;
+
+    switch (event.keyCode) {
+        case 32:// space
+            break;
+        case left:
+            moveX(-SPEED);
+            moved = true;
+            break;
+        case right:
+            moveX(SPEED);
+            moved = true;
+            break;
+        default:
+            break;
+    }
+    if (moved) {
+        onDraw();
+    }
+}
+window.onkeydown = keyHandle;
+initialize();
