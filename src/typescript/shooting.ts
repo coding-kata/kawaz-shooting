@@ -27,6 +27,8 @@ function mainLoop() {
     var startTime = (new Date()).getTime();
     // プレイヤーの移動
     movePlayer();
+    // 敵キャラの移動
+    moveEnemies();
     // 描画
     onDraw();
     // 処理の経過時間
@@ -67,7 +69,28 @@ function onDraw() {
         ctx.drawImage(img_enemy, enemyPosition.x, enemyPosition.y);
     }
 }
+// 敵キャラの移動
+function moveEnemies() {
+    var SPEED = 2;
 
+    function recover(enemy:IPosition):IPosition {
+        if (enemy.y <= canvas.height) {
+            return enemy;
+        }
+        // はみ出た時はランダム再配置する
+        enemy.y = -img_enemy.height;
+        enemy.x = Math.random() * (canvas.width - img_enemy.width);
+        return enemy;
+    }
+
+    for (var i = 0; i < ENEMIES_COUNT; i++) {
+        var enemy = enemies[i];
+        enemy.y += SPEED;
+        enemies[i] = recover(enemy);
+    }
+}
+
+// プレイヤーの移動
 function movePlayer() {
     function moveX(px:number) {
         playerPos.x += px;
@@ -76,9 +99,12 @@ function movePlayer() {
     var left = 37;
     var right = 39;
     var SPEED = 2;
+
+    // | <player>
     if (keyStates[left] && playerPos.x > 0) {
         moveX(-SPEED);
     }
+    //  <player> |
     if (keyStates[right] && (playerPos.x + img_player.width < canvas.width)) {
         moveX(SPEED);
     }
