@@ -1,0 +1,32 @@
+{
+  "name": "kawaz-shooting",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azu/kawaz-shooting.git"
+  },
+  "email": "azuciao@gmail.com",
+  "homepage": "https://github.com/azu/kawaz-shooting",
+  "bugs": {
+    "url": "https://github.com/azu/kawaz-shooting/issues"
+  },
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build":"tsc -p src/typescript",
+    "watch":"tsc -w -p src/typescript",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "azu",
+  "license": "MIT",
+  "devDependencies": {
+    "espower-loader": "^0.10.0",
+    "intelli-espower-loader": "^0.6.0",
+    "mocha": "^2.2.4",
+    "power-assert": "^0.10.2",
+    "testem": "^0.8.0-0",
+    "typescript": "^1.5.0-alpha"
+  }
+}
