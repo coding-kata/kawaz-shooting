@@ -17,12 +17,17 @@ var ENEMIES_COUNT = 10;
 var enemies:IPosition[] = [];
 var img_player:HTMLImageElement;
 var img_enemy:HTMLImageElement;
-
+// キーの状態管理
+var keyStates:{ [index:number]: boolean} = {};
 // メインループ - 60 FPS のゲームの場合約 17 ms
+// 実行環境によってゲーム速度が変化するので、それを整えるためのFPS
 var FPS = 30;
 var MSPF = 1000 / FPS;
 function mainLoop() {
     var startTime = (new Date()).getTime();
+    // プレイヤーの移動
+    movePlayer();
+    // 描画
     onDraw();
     // 処理の経過時間
     var deltaTime:number = (new Date()).getTime() - startTime;
@@ -36,6 +41,7 @@ function mainLoop() {
         mainLoop();
     }
 }
+
 
 function initialize() {
     img_player = <HTMLImageElement>document.getElementById("player");
@@ -61,7 +67,8 @@ function onDraw() {
         ctx.drawImage(img_enemy, enemyPosition.x, enemyPosition.y);
     }
 }
-function keyHandle(event:KeyboardEvent) {
+
+function movePlayer() {
     function moveX(px:number) {
         playerPos.x += px;
     }
@@ -69,25 +76,20 @@ function keyHandle(event:KeyboardEvent) {
     var left = 37;
     var right = 39;
     var SPEED = 2;
-    var moved = false;
-
-    switch (event.keyCode) {
-        case 32:// space
-            break;
-        case left:
-            moveX(-SPEED);
-            moved = true;
-            break;
-        case right:
-            moveX(SPEED);
-            moved = true;
-            break;
-        default:
-            break;
+    if (keyStates[left]) {
+        moveX(-SPEED);
     }
-    if (moved) {
-        onDraw();
+    if (keyStates[right]) {
+        moveX(SPEED);
     }
 }
-window.onkeydown = keyHandle;
+function onKeyDown(event:KeyboardEvent) {
+    keyStates[event.keyCode] = true;
+}
+function onKeyUp(event:KeyboardEvent) {
+    keyStates[event.keyCode] = false;
+
+}
+window.onkeydown = onKeyDown;
+window.onkeyup = onKeyUp;
 initialize();
