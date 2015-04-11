@@ -112,6 +112,10 @@ function initialize() {
                     playerHP -= 1;
                     enemiesHP[i] -= 1;
                     playerStarInterval = STAR_INTERVAL;
+                    // 敵が死んだ場合は killed を増やす
+                    if (enemiesHP[i] == 0) {
+                        killed++;
+                    }
                 }
             }
         }
@@ -150,7 +154,7 @@ function initialize() {
             }
         }
 
-        if(playerStarInterval > 0) {
+        if (playerStarInterval > 0) {
             playerStarInterval--;
         }
         // 描画
@@ -187,14 +191,50 @@ function drawPlayerHP() {
     ctx.fillRect(10, canvas.height - 10, playerHP * 5, 5); // コンテキストの状態を復元
     ctx.restore();
 }
+function drawGameOver() {
+// 全体を半透明の黒い四角で覆う(オーバーレイ) ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1.0;
+// 真ん中に大きな文字でゲームオーバー(赤)と表示する
+    ctx.font = '20px sans-serif';
+    ctx.textBaseline = 'middle'; // 上下位置のベースラインを中心に
+    ctx.fillStyle = '#f00';
+    var text = "Game Over";
+    var width = ctx.measureText(text).width;
+    ctx.fillText(text,
+        (canvas.width - width) / 2,
+        canvas.height / 2);
+    ctx.restore();
+}
+function drawGameClear() {
+    // 全体を半透明の黒い四角で覆う(オーバーレイ) ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1.0;
+// 真ん中に大きな文字でゲームクリア(白)と表示する
+    ctx.font = '20px sans-serif';
+    ctx.textBaseline = 'middle'; // 上下位置のベースラインを中心に
+    ctx.fillStyle = '#fff';
+    var text = "Game Clear";
+    var width = ctx.measureText(text).width;
+    ctx.fillText(text,
+        (canvas.width - width) / 2,
+        canvas.height / 2);
+    ctx.restore();
+
+}
 function onDraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawPlayerHP();
     drawEnemyCount();
+    if (playerHP <= 0) {
+        drawGameOver();
+    }
     // 生きている場合だけ新しい位置にプレイヤーを描画
     if (playerHP > 0) {
         ctx.save();
-        if(playerStarInterval % 2 !== 0) {
+        if (playerStarInterval % 2 !== 0) {
             ctx.globalAlpha = 0.5;
         }
         ctx.drawImage(img_player, playerPos.x, playerPos.y);
@@ -216,6 +256,10 @@ function onDraw() {
         }
         var enemyPosition = enemiesPosition[i];
         ctx.drawImage(img_enemy, enemyPosition.x, enemyPosition.y);
+    }
+
+    if (killed === ENEMIES_COUNT) {
+        drawGameClear();
     }
 }
 // プレイヤーの弾
