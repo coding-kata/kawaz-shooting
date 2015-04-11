@@ -84,7 +84,6 @@ function initialize() {
         enemiesHP[i_2] = 2;
     }
     mainLoop(()=> {
-        console.log(playerBulletsHP);
         // プレイヤーの移動
         movePlayer();
         // プレイヤーの弾
