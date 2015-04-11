@@ -1,19 +1,23 @@
 # kawaz-shooting
 
-しゃきょう
+- [KawazAdventCalendar2014/shooting.js at master · lambdalisue/KawazAdventCalendar2014](https://github.com/lambdalisue/KawazAdventCalendar2014/blob/master/src/js/shooting.js)
+- [初心者がモチベーション上げながらプログラミングをしてシューティング（っぽい）ゲームを1本作る！ - Λlisue's blog](http://lambdalisue.hatenablog.com/entry/2013/12/25/160910)
+
+をTypeScript 1.5αで写経したものです。
 
 ## Installation
 
-- [ ] Describe the installation process
+    npm install
+    npm run build
 
 ## Usage
 
-- [ ] Write usage instructions
+    open src/index.html
 
 ## Tests
 
-- [ ] Write How to Tests
-
+    npm test
+    
 ## Contributing
 
 1. Fork it!
