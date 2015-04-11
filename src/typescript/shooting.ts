@@ -1,4 +1,5 @@
 "use strict";
+import mainLoop from "./main-loop"
 var canvas:HTMLCanvasElement;
 var ctx:CanvasRenderingContext2D;
 interface IPosition {
@@ -14,19 +15,22 @@ var playerPos:IPosition = {
 
 // 敵キャラの定義
 var ENEMIES_COUNT = 10;
-var enemies:IPosition[] = [];
+var enemiesPosition:IPosition[] = [];
 var img_player:HTMLImageElement;
 var img_enemy:HTMLImageElement;
+var img_player_bullet:HTMLImageElement;
 // ヒットポイント管理
 var playerHP:number;
-var enemiesHP:{ [index:number]: number} = {};
+var enemiesHP:{ [index:number]: number} = [];
 // キーの状態管理
-var keyStates:{ [index:number]: boolean} = {};
-// メインループ - 60 FPS のゲームの場合約 17 ms
-// 実行環境によってゲーム速度が変化するので、それを整えるためのFPS
-var FPS = 30;
-var MSPF = 1000 / FPS;
-
+var keyStates:{ [index:number]: boolean} = [];
+// 弾の数
+var BULLETS = 5;
+var playerBulletsPosition:IPosition[] = [];
+var playerBulletsHP:{[index:number]: number} = [];
+var FIRE_INTERVAL = 20;
+// 発射感覚
+var playerFireInterval = 0;
 function hitTest(player:{
     object:HTMLImageElement;
     position:IPosition;
@@ -45,72 +49,100 @@ function hitTest(player:{
     // Math.sqrt(d) -- d のルートを返す
     // Math.pow(x, a) -- x の a 乗を返す
     var d = Math.sqrt(Math.pow(cx1 - cx2, 2) + Math.pow(cy1 - cy2, 2)); // 当たっているか判定
-// ちなみに `return r1+r2 > d;` とだけ書いても OK
+    // ちなみに `return r1+r2 > d;` とだけ書いても OK
     return r1 + r2 > d;
 }
-function mainLoop() {
-    var startTime = (new Date()).getTime();
-    // プレイヤーの移動
-    movePlayer();
-    // 敵キャラの移動
-    moveEnemies();
-    // プレイヤーと敵で
-    if (playerHP > 0) {
-        for (var i = 0; i < ENEMIES_COUNT; i++) {
-            // HPが0上の敵のみ判定する
-            var enemyHP = enemiesHP[i];
-            if (enemyHP <= 0) {
-                continue;
-            }
-            var enemyPosition = enemies[i];
-
-            if (hitTest({
-                    object: img_player,
-                    position: playerPos
-                }, {
-                    object: img_enemy,
-                    position: enemyPosition
-                })){
-            // hitしてる場合は互いにHP-1
-                playerHP -= 1;
-                enemiesHP[i] -= 1;
-            }
-        }
-    }
-    // 描画
-    onDraw();
-    // 処理の経過時間
-    var deltaTime:number = (new Date()).getTime() - startTime;
-    // 次のループまでのintervalを算出
-    var interval = MSPF - deltaTime;
-    if (interval > 0) {
-        // interval分を待つ
-        setTimeout(mainLoop, interval);
-    } else {
-        // 次の処理へ
-        mainLoop();
-    }
-}
-
 
 function initialize() {
     img_player = <HTMLImageElement>document.getElementById("player");
     img_enemy = <HTMLImageElement>document.getElementById("enemy");
+    img_player_bullet = <HTMLImageElement>document.getElementById("player_bullet");
     canvas = <HTMLCanvasElement>document.getElementById("screen");
     ctx = canvas.getContext("2d");
     playerPos.x = (canvas.width - img_player.width) / 2;
     playerPos.y = (canvas.height - img_player.height) - 20;
     // 初期HP
     playerHP = 10;
-    // 敵の初期位置
-    for (var i = 0; i < ENEMIES_COUNT; i++) {
-        enemies[i] = {
+    // 弾のHPを指定
+    for (var i_1 = 0; i_1 < BULLETS; i_1++) {
+        playerBulletsHP[i_1] = 0;
+        playerBulletsPosition[i_1] = {
+            x: 0,
+            y: 0
+        };
+    }
+    // 敵HP
+    for (var i_2 = 0; i_2 < ENEMIES_COUNT; i_2++) {
+        enemiesPosition[i_2] = {
             x: Math.random() * (canvas.width - img_enemy.width),
             y: Math.random() * (canvas.height - img_enemy.height)
         };
-        enemiesHP[i] = 2;
+        enemiesHP[i_2] = 2;
     }
-    mainLoop();
+    mainLoop(()=> {
+        console.log(playerBulletsHP);
+        // プレイヤーの移動
+        movePlayer();
+        // プレイヤーの弾
+        movePlayerBullets();
+        // 敵キャラの移動
+        moveEnemies();
+        // プレイヤーと敵で
+        if (playerHP > 0) {
+            for (var i = 0; i < ENEMIES_COUNT; i++) {
+                // HPが0上の敵のみ判定する
+                var enemyHP = enemiesHP[i];
+                if (enemyHP <= 0) {
+                    continue;
+                }
+                var enemyPosition = enemiesPosition[i];
+                if (hitTest({
+                        object: img_player,
+                        position: playerPos
+                    }, {
+                        object: img_enemy,
+                        position: enemyPosition
+                    })) {
+                    // hitしてる場合は互いにHP-1
+                    playerHP -= 1;
+                    enemiesHP[i] -= 1;
+                }
+            }
+        }
+        // プレイヤー弾と敵
+        if (playerHP > 0) {
+            for (var i = 0; i < ENEMIES_COUNT; i++) {
+                // HPが0上の敵のみ判定する
+                var enemyHP = enemiesHP[i];
+                var enemyPosition = enemiesPosition[i];
+                if (enemyHP <= 0) {
+                    continue;
+                }
+                for (var j = 0; j < BULLETS; j++) {
+                    // 弾が死んでいる場合はスルーする
+                    if (playerBulletsHP[j] <= 0) {
+                        continue;
+                    }
+                    var playerBulletPosition = playerBulletsPosition[j];
+                    if (hitTest({
+                            object: img_player_bullet,
+                            position: playerBulletPosition
+                        }, {
+                            object: img_enemy,
+                            position: enemyPosition
+                        })) {
+                        // 当たっているのでお互いの HP を 1 削る
+                        playerBulletsHP[j] -= 1;
+                        enemiesHP[i] -= 1;
+                    }
+                }
+            }
+
+        }
+        // 描画
+
+        onDraw();
+    });
 }
 function onDraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -119,15 +151,40 @@ function onDraw() {
     if (playerHP > 0) {
         ctx.drawImage(img_player, playerPos.x, playerPos.y);
     }
+
+    // 弾の画像を描画
+    for (var i = 0; i < BULLETS; i++) {
+        if (playerBulletsHP[i] > 0) {
+            var playerBulletPosition = playerBulletsPosition[i];
+            ctx.drawImage(img_player_bullet, playerBulletPosition.x, playerBulletPosition.y);
+        }
+    }
     for (var i = 0; i < ENEMIES_COUNT; i++) {
         // HPが0上の敵のみ描画
         var enemyHP = enemiesHP[i];
         if (enemyHP <= 0) {
             continue;
         }
-        var enemyPosition = enemies[i];
+        var enemyPosition = enemiesPosition[i];
         ctx.drawImage(img_enemy, enemyPosition.x, enemyPosition.y);
     }
+}
+// プレイヤーの弾
+function movePlayerBullets() {
+    var SPEED = -6;
+    for (var i = 0; i < BULLETS; i++) {
+        var playerBulletHP = playerBulletsHP[i];
+        if (playerBulletHP <= 0) {
+            continue;
+        }
+        var playerBulletPosition = playerBulletsPosition[i];
+        // 下へ
+        playerBulletPosition.y += SPEED;
+        if (playerBulletPosition.y < img_player_bullet.height) {
+            playerBulletsHP[i] = 0;
+        }
+    }
+
 }
 // 敵キャラの移動
 function moveEnemies() {
@@ -149,9 +206,9 @@ function moveEnemies() {
         if (enemyHP <= 0) {
             continue;
         }
-        var enemy = enemies[i];
+        var enemy = enemiesPosition[i];
         enemy.y += SPEED;
-        enemies[i] = recover(enemy);
+        enemiesPosition[i] = recover(enemy);
     }
 }
 
@@ -164,10 +221,28 @@ function movePlayer() {
         playerPos.x += px;
     }
 
+    var space = 32;
     var left = 37;
     var right = 39;
     var SPEED = 2;
 
+    if (keyStates[space] && playerFireInterval === 0) {
+        for (var i = 0; i < BULLETS; i++) {
+            var playerBulletHP = playerBulletsHP[i];
+            if (playerBulletHP === 0) {
+                var playerBulletPosition = playerBulletsPosition[i];
+                playerBulletPosition.x = playerPos.x;
+                playerBulletPosition.y = playerPos.y;
+                playerBulletsHP[i] = 1;
+                // インターバル値を戻す
+                playerFireInterval = FIRE_INTERVAL;
+                break;
+            }
+        }
+    }
+    if (playerFireInterval > 0) {
+        playerFireInterval--;
+    }
     // | <player>
     if (keyStates[left] && playerPos.x > 0) {
         moveX(-SPEED);
