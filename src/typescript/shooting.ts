@@ -29,8 +29,12 @@ var BULLETS = 5;
 var playerBulletsPosition:IPosition[] = [];
 var playerBulletsHP:{[index:number]: number} = [];
 var FIRE_INTERVAL = 20;
+var STAR_INTERVAL = 20;
 // 発射感覚
 var playerFireInterval = 0;
+var playerStarInterval = 0;
+// 倒した敵の数を保存する変数を定義
+var killed = 0;
 function hitTest(player:{
     object:HTMLImageElement;
     position:IPosition;
@@ -88,10 +92,11 @@ function initialize() {
         // 敵キャラの移動
         moveEnemies();
         // プレイヤーと敵で
-        if (playerHP > 0) {
+        if (playerHP > 0 && playerStarInterval === 0) {
             for (var i = 0; i < ENEMIES_COUNT; i++) {
                 // HPが0上の敵のみ判定する
                 var enemyHP = enemiesHP[i];
+
                 if (enemyHP <= 0) {
                     continue;
                 }
@@ -106,6 +111,7 @@ function initialize() {
                     // hitしてる場合は互いにHP-1
                     playerHP -= 1;
                     enemiesHP[i] -= 1;
+                    playerStarInterval = STAR_INTERVAL;
                 }
             }
         }
@@ -115,6 +121,7 @@ function initialize() {
                 // HPが0上の敵のみ判定する
                 var enemyHP = enemiesHP[i];
                 var enemyPosition = enemiesPosition[i];
+
                 if (enemyHP <= 0) {
                     continue;
                 }
@@ -134,22 +141,64 @@ function initialize() {
                         // 当たっているのでお互いの HP を 1 削る
                         playerBulletsHP[j] -= 1;
                         enemiesHP[i] -= 1;
+                        // 敵が死んだ場合は killed を増やす
+                        if (enemiesHP[i] == 0) {
+                            killed++;
+                        }
                     }
                 }
             }
+        }
 
+        if(playerStarInterval > 0) {
+            playerStarInterval--;
         }
         // 描画
-
         onDraw();
     });
 }
+
+function drawEnemyCount() {
+    // コンテキストの状態を保存(fillStyle を変えたりするので) ctx.save();
+    // HP の最大値(10)x 5 の短形を描画(白)
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(10, canvas.height - 10, 10 * 5, 5);
+    // 残り HP x 5 の短形を描画(赤)
+    ctx.fillStyle = '#f00';
+    ctx.fillRect(10, canvas.height - 10, playerHP * 5, 5);
+    // 「倒した敵の数/全敵の数」という文字列を作成
+    var text = "Killed: " + killed + "/" + ENEMIES_COUNT; // 文字列の(描画)横幅を計算する
+    var width = ctx.measureText(text).width;
+    // 文字列を描画(白)
+    ctx.fillStyle = '#fff';
+    ctx.fillText(text,
+        canvas.width - 10 - width,
+        canvas.height - 10);
+    // コンテキストの状態を復元
+    ctx.restore();
+}
+function drawPlayerHP() {
+    ctx.save();
+    // HP の最大値(10)x 5 の短形を描画(白)
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(10, canvas.height - 10, 10 * 5, 5);
+    // 残り HP x 5 の短形を描画(赤)
+    ctx.fillStyle = '#f00';
+    ctx.fillRect(10, canvas.height - 10, playerHP * 5, 5); // コンテキストの状態を復元
+    ctx.restore();
+}
 function onDraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    drawPlayerHP();
+    drawEnemyCount();
     // 生きている場合だけ新しい位置にプレイヤーを描画
     if (playerHP > 0) {
+        ctx.save();
+        if(playerStarInterval % 2 !== 0) {
+            ctx.globalAlpha = 0.5;
+        }
         ctx.drawImage(img_player, playerPos.x, playerPos.y);
+        ctx.restore();
     }
 
     // 弾の画像を描画
