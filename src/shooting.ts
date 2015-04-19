@@ -1,5 +1,6 @@
 "use strict";
 import mainLoop from "./main-loop"
+import {FPS} from "./main-loop"
 var canvas:HTMLCanvasElement;
 var ctx:CanvasRenderingContext2D;
 interface IPosition {
@@ -83,14 +84,14 @@ function initialize() {
         };
         enemiesHP[i_2] = 2;
     }
-    mainLoop(()=> {
-        console.log(playerBulletsHP);
+
+    mainLoop((delta:number)=> {
         // プレイヤーの移動
-        movePlayer();
+        movePlayer(delta);
         // プレイヤーの弾
-        movePlayerBullets();
+        movePlayerBullets(delta);
         // 敵キャラの移動
-        moveEnemies();
+        moveEnemies(delta);
         // プレイヤーと敵で
         if (playerHP > 0 && playerStarInterval === 0) {
             for (var i = 0; i < ENEMIES_COUNT; i++) {
@@ -263,8 +264,8 @@ function onDraw() {
     }
 }
 // プレイヤーの弾
-function movePlayerBullets() {
-    var SPEED = -6;
+function movePlayerBullets(delta:number) {
+    var SPEED = -6 * FPS * delta;
     for (var i = 0; i < BULLETS; i++) {
         var playerBulletHP = playerBulletsHP[i];
         if (playerBulletHP <= 0) {
@@ -280,8 +281,8 @@ function movePlayerBullets() {
 
 }
 // 敵キャラの移動
-function moveEnemies() {
-    var SPEED = 2;
+function moveEnemies(delta:number) {
+    var SPEED = 2 * FPS * delta;
 
     function recover(enemy:IPosition):IPosition {
         if (enemy.y <= canvas.height) {
@@ -306,7 +307,7 @@ function moveEnemies() {
 }
 
 // プレイヤーの移動
-function movePlayer() {
+function movePlayer(delta:number) {
     if (playerHP <= 0) {
         return;
     }
@@ -317,7 +318,8 @@ function movePlayer() {
     var space = 32;
     var left = 37;
     var right = 39;
-    var SPEED = 2;
+    // 秒速120px
+    var SPEED = 2 * FPS * delta;
 
     if (keyStates[space] && playerFireInterval === 0) {
         for (var i = 0; i < BULLETS; i++) {
